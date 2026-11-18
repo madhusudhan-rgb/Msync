@@ -112,7 +112,7 @@ The asset protocol is enabled for app data, cache, and home paths so video files
 
 | Command | Description |
 | --- | --- |
-| `npm run app` | Run the desktop app with hot reload |
+| `npm run app/cargo tauri dev` | Run the desktop app with hot reload |
 | `npm run dev` | Run only the web frontend (browser preview) |
 | `npm run build` | Type-check and build the frontend |
 | `npm run app:build` | Build the native app/bundles |
