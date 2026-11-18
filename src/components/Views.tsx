@@ -299,7 +299,7 @@ export function AlbumView() {
   return (
     <>
       <button className={backButton} onClick={() => player.setView('albums')}>
-        <Icon name="chevron-left" size={16} /> Albums
+        <Icon name="chevron-left" size={16} /> Albums.
       </button>
 
       <section className={detailHero}>
