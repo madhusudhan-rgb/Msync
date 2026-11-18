@@ -1,7 +1,5 @@
-<<<<<<< HEAD
 
-=======
-# Musicplayer
+# Msync
 
 A small, fast music and video player for **Windows, Linux, macOS, Android, and iOS**, built with a React + TypeScript frontend and a Tauri 2 / Rust backend.
 
