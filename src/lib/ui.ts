@@ -13,10 +13,10 @@ export const iconButton =
   'grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full text-[#a2a2ab] transition hover:bg-white/[0.07] hover:text-white active:scale-[0.94] disabled:cursor-not-allowed disabled:opacity-30';
 
 export const playButton =
-  'mx-1 grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-[#1ed760] text-[#04140a] transition hover:scale-105 hover:bg-[#2ce06c] active:scale-95 disabled:cursor-not-allowed disabled:opacity-35';
+  'mx-1 grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-white text-[#04140a] transition hover:scale-105 hover:bg-[#2ce06c] active:scale-95 disabled:cursor-not-allowed disabled:opacity-35';
 
 export const hugePlayButton =
-  'mx-[10px] grid h-16 w-16 shrink-0 place-items-center rounded-full bg-[#1ed760] text-[#04140a] transition hover:scale-105 hover:bg-[#2ce06c] active:scale-95';
+  'mx-[10px] grid h-16 w-16 shrink-0 place-items-center rounded-full bg-white text-[#04140a] transition hover:scale-105 hover:bg-[#2ce06c] active:scale-95';
 
 export const badge =
   'inline-flex h-4 shrink-0 items-center rounded bg-[#1ed760]/15 px-[5px] text-[8.5px] font-extrabold tracking-[0.08em] text-[#1ed760]';
@@ -29,7 +29,7 @@ export const emptyIcon =
 
 export const emptyTitle = 'text-[20px] font-bold tracking-[-0.02em]';
 
-export const emptyText = 'max-w-[400px] text-[13px] leading-relaxed text-[#a2a2ab]';
+export const emptyText = 'max-w-[400px] text-[11px] leading-relaxed text-[#a2a2ab]';
 
 export const emptyActions = 'mt-[14px] flex flex-wrap justify-center gap-2';
 
@@ -57,7 +57,7 @@ export const cardGrid =
 export const mediaCard = 'group flex flex-col gap-1 text-left';
 
 export const cardArt =
-  'mb-[10px] aspect-square w-full rounded-[10px] border border-white/[0.08] transition-transform duration-200 group-hover:scale-[1.02]';
+  'mb-[10px] aspect-square w-full rounded-[10px] border border-white/[0.08] transition-transform duration-200 group-hover:scale-[1.22]';
 
 export const cardName = 'truncate text-[13px] font-semibold tracking-[-0.01em]';
 
