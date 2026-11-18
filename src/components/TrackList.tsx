@@ -3,6 +3,7 @@ import { player } from '../lib/player';
 import { usePlayerValue } from '../hooks/usePlayerValue';
 import type { Track } from '../lib/types';
 import { formatTime, trackAlbum, trackArtist } from '../lib/utils';
+import { badge } from '../lib/ui';
 import { Artwork } from './Artwork';
 import { Equalizer, Icon } from './Icons';
 
@@ -52,6 +53,19 @@ function sortTracks(tracks: Track[], key: SortKey, direction: Direction): Track[
   return [...tracks].sort((a, b) => compareTracks(a, b, key) * direction);
 }
 
+function gridFor(showArt: boolean, showAlbum: boolean): string {
+  if (showArt && showAlbum) {
+    return 'grid-cols-[34px_40px_minmax(0,3fr)_minmax(0,2fr)_64px_34px] max-[720px]:grid-cols-[30px_40px_minmax(0,1fr)_52px_30px] max-[460px]:grid-cols-[26px_minmax(0,1fr)_44px]';
+  }
+  if (!showArt && showAlbum) {
+    return 'grid-cols-[34px_minmax(0,3fr)_minmax(0,2fr)_64px_34px] max-[720px]:grid-cols-[30px_minmax(0,1fr)_52px_30px] max-[460px]:grid-cols-[26px_minmax(0,1fr)_44px]';
+  }
+  if (showArt && !showAlbum) {
+    return 'grid-cols-[34px_40px_minmax(0,1fr)_64px_34px] max-[720px]:grid-cols-[28px_36px_minmax(0,1fr)_48px_26px] max-[460px]:grid-cols-[26px_minmax(0,1fr)_44px]';
+  }
+  return 'grid-cols-[34px_minmax(0,1fr)_64px_34px] max-[720px]:grid-cols-[28px_minmax(0,1fr)_48px_26px] max-[460px]:grid-cols-[26px_minmax(0,1fr)_44px]';
+}
+
 export function TrackList({
   tracks,
   showArt = true,
@@ -74,13 +88,11 @@ export function TrackList({
     () => (sort ? sortTracks(tracks, sort.key, sort.direction) : tracks),
     [tracks, sort],
   );
+  const grid = gridFor(showArt, showAlbum);
 
   const select = (track: Track, index: number) => {
-    if (onSelect) {
-      onSelect(track, index);
-    } else {
-      void player.playTrack(track, sorted);
-    }
+    if (onSelect) onSelect(track, index);
+    else void player.playTrack(track, sorted);
   };
 
   const toggleSort = (key: SortKey) => {
@@ -93,25 +105,27 @@ export function TrackList({
 
   const sortIndicator = (key: SortKey) => {
     if (sort?.key !== key) return null;
-    return <span className="sort-indicator">{sort.direction === 1 ? '↑' : '↓'}</span>;
+    return <span className="ml-[2px] text-[#1ed760]">{sort.direction === 1 ? '↑' : '↓'}</span>;
   };
 
   if (!tracks.length) {
-    return <div className="empty-list">{emptyMessage}</div>;
+    return (
+      <div className="rounded-[10px] border border-dashed border-white/[0.08] px-3 py-7 text-center text-[13px] text-[#a2a2ab]">
+        {emptyMessage}
+      </div>
+    );
   }
 
   return (
-    <div className="track-table">
+    <div className="w-full">
       <div
-        className={`track-head ${showArt ? '' : 'no-art'} ${showAlbum ? '' : 'no-album'} ${
-          showKind ? 'with-kind' : ''
-        }`}
+        className={`mb-[6px] grid h-[30px] items-center gap-3 border-b border-white/[0.08] px-2 text-[11px] tracking-[0.04em] text-[#6c6c75] ${grid}`}
       >
-        <span className="col-index">#</span>
-        {showArt ? <span className="col-art" /> : null}
-        <span className="col-title">
+        <span className="pr-[8px] text-right">#</span>
+        {showArt ? <span className="max-[460px]:hidden" /> : null}
+        <span className="min-w-0 truncate">
           {sortable ? (
-            <button className="sort-button" onClick={() => toggleSort('title')}>
+            <button className="p-0 hover:text-white hover:underline hover:underline-offset-[3px]" onClick={() => toggleSort('title')}>
               Title {sortIndicator('title')}
             </button>
           ) : (
@@ -119,9 +133,9 @@ export function TrackList({
           )}
         </span>
         {showAlbum ? (
-          <span className="col-album">
+          <span className="min-w-0 truncate max-[720px]:hidden">
             {sortable ? (
-              <button className="sort-button" onClick={() => toggleSort('album')}>
+              <button className="p-0 hover:text-white hover:underline hover:underline-offset-[3px]" onClick={() => toggleSort('album')}>
                 Album {sortIndicator('album')}
               </button>
             ) : (
@@ -129,19 +143,19 @@ export function TrackList({
             )}
           </span>
         ) : null}
-        <span className="col-duration">
+        <span className="min-w-0 truncate pr-1 text-right max-[460px]:hidden">
           {sortable ? (
-            <button className="sort-button" onClick={() => toggleSort('duration')}>
+            <button className="p-0 hover:text-white hover:underline hover:underline-offset-[3px]" onClick={() => toggleSort('duration')}>
               Time {sortIndicator('duration')}
             </button>
           ) : (
             'Time'
           )}
         </span>
-        <span className="col-actions" />
+        <span className="w-[34px] max-[460px]:hidden" />
       </div>
 
-      <div className="track-rows" role="list" aria-label="Tracks">
+      <div role="list" aria-label="Tracks">
         {sorted.map((track, index) => {
           const isCurrent = currentId === track.id;
           const label =
@@ -154,22 +168,17 @@ export function TrackList({
           return (
             <div
               key={track.id}
-              className={`track-row ${showArt ? '' : 'no-art'} ${showAlbum ? '' : 'no-album'} ${
-                showKind ? 'with-kind' : ''
-              } ${isCurrent ? 'is-current' : ''}`}
               role="listitem"
+              className={`group grid min-h-[52px] items-center gap-3 rounded-lg px-2 transition-colors hover:bg-white/[0.045] max-[720px]:px-1 ${grid}`}
               onClick={() => select(track, index)}
               onDoubleClick={() => void player.playTrack(track, sorted)}
             >
               <button
-                className="col-index row-index"
+                className="relative grid h-7 place-items-center text-right text-[12px] tabular-nums text-[#6c6c75] transition-colors hover:text-white"
                 onClick={(event) => {
                   event.stopPropagation();
-                  if (isCurrent) {
-                    void player.toggle();
-                  } else {
-                    select(track, index);
-                  }
+                  if (isCurrent) void player.toggle();
+                  else select(track, index);
                 }}
                 aria-label={isCurrent && playing ? `Pause ${track.title}` : `Play ${track.title}`}
               >
@@ -177,38 +186,58 @@ export function TrackList({
                   <Equalizer active />
                 ) : (
                   <>
-                    <span className="row-number">{index + 1}</span>
-                    <Icon name="play" size={13} className="row-play" />
+                    <span className="transition-opacity group-hover:opacity-0">{index + 1}</span>
+                    <Icon
+                      name="play"
+                      size={13}
+                      className="absolute opacity-0 transition-opacity group-hover:opacity-100"
+                    />
                   </>
                 )}
               </button>
 
               {showArt ? (
-                <Artwork
-                  path={track.kind === 'audio' ? track.path : null}
-                  seed={track.album ?? track.title}
-                  size="sm"
-                  lazy
-                  alt={track.title}
-                />
+                <span className="max-[460px]:hidden">
+                  <Artwork
+                    path={track.kind === 'audio' ? track.path : null}
+                    seed={track.album ?? track.title}
+                    size="sm"
+                    lazy
+                    alt={track.title}
+                  />
+                </span>
               ) : null}
 
-              <span className="col-title row-main">
-                <span className="row-title">
+              <span className="flex min-w-0 flex-col gap-px">
+                <span
+                  className={`flex min-w-0 items-center gap-2 truncate text-[13.5px] font-medium ${
+                    isCurrent ? 'text-[#1ed760]' : 'text-white'
+                  }`}
+                >
                   {track.title}
-                  {showKind ? <span className="badge">{track.kind === 'video' ? 'VIDEO' : track.ext.toUpperCase()}</span> : null}
+                  {showKind ? (
+                    <span className={badge}>
+                      {track.kind === 'video' ? 'VIDEO' : track.ext.toUpperCase()}
+                    </span>
+                  ) : null}
                 </span>
-                <span className="row-sub">{label}</span>
+                <span className="truncate text-[11.5px] text-[#a2a2ab]">{label}</span>
               </span>
 
-              {showAlbum ? <span className="col-album row-album">{trackAlbum(track)}</span> : null}
+              {showAlbum ? (
+                <span className="min-w-0 truncate text-[12px] text-[#a2a2ab] max-[720px]:hidden">
+                  {trackAlbum(track)}
+                </span>
+              ) : null}
 
-              <span className="col-duration">{track.duration > 0 ? formatTime(track.duration) : '—'}</span>
+              <span className="min-w-0 truncate text-right text-[12px] tabular-nums text-[#a2a2ab] max-[460px]:hidden">
+                {track.duration > 0 ? formatTime(track.duration) : '—'}
+              </span>
 
-              <span className="col-actions">
+              <span className="grid place-items-center max-[460px]:hidden">
                 {allowRemove ? (
                   <button
-                    className="row-action"
+                    className="grid h-[26px] w-[26px] place-items-center rounded-full text-[#6c6c75] opacity-0 transition hover:bg-[#ff6b6b]/10 hover:text-[#ff6b6b] focus-visible:opacity-100 group-hover:opacity-100 max-[680px]:opacity-60"
                     title="Remove from library"
                     aria-label={`Remove ${track.title} from library`}
                     onClick={(event) => {

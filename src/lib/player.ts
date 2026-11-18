@@ -250,7 +250,29 @@ class PlayerStore {
       if (saved && (saved.library.length || saved.folders.length || saved.looseFiles.length)) {
         this.restoreSaved(saved);
       } else {
-        // First launch on this build: promote the webview copy to disk.
+        // First launch on this build: migrate any webview-stored library into
+        // real local copies, then write the on-disk snapshot.
+        const legacy = readPersisted();
+        const paths = (legacy.library ?? [])
+          .map((track) => track.path)
+          .filter((path) => !path.startsWith('blob:'));
+        const imported = paths.length ? await backend.importPaths(paths) : [];
+        if (imported.length) {
+          const wantedId = legacy.currentId ?? null;
+          const current =
+            (wantedId ? imported.find((track) => track.id === wantedId) : null) ?? null;
+          this.set({
+            library: imported,
+            folders: legacy.folders ?? [],
+            looseFiles: legacy.looseFiles ?? [],
+            current,
+            queue: current ? imported : [],
+            queueIndex: current ? imported.findIndex((track) => track.id === current.id) : -1,
+            duration: current?.duration ?? 0,
+            videoSrc: current?.kind === 'video' ? backend.mediaUrl(current.path) : null,
+          });
+          this.pendingCurrentId = null;
+        }
         this.saveNow();
       }
     } else {
@@ -328,7 +350,7 @@ class PlayerStore {
     if (!paths.length) return;
     this.set({ scanning: true });
     try {
-      const tracks = await backend.scanPaths(paths);
+      const tracks = await backend.importPaths(paths);
       this.merge(tracks, folder, loose ? paths : undefined);
       if (!tracks.length) {
         this.setError('No supported audio or video files were found there.');
@@ -383,7 +405,7 @@ class PlayerStore {
 
     this.set({ scanning: true });
     try {
-      const scanned = await backend.scanPaths(targets);
+      const scanned = await backend.importPaths(targets);
       const alive = new Set(scanned.map((track) => track.id));
       const folders = this.state.folders.map((folder) => folder.toLowerCase());
       const loose = new Set(this.state.looseFiles);
@@ -713,7 +735,7 @@ class PlayerStore {
 
   videoError() {
     this.setError(
-      'This video format is not supported by the system webview. MP4 (H.264) and WebM usually work.',
+      'This video could not be decoded by the system webview. MP4 (H.264), WebM and OGV work best; HEVC and MPEG-4 Part 2 files are often unsupported.',
     );
   }
 

@@ -53,6 +53,17 @@ export function scanPaths(paths: string[]): Promise<Track[]> {
   return invoke<Track[]>('scan_paths', { paths });
 }
 
+/** Copies added media into the app's own folder so it survives later moves. */
+export function importPaths(paths: string[]): Promise<Track[]> {
+  if (!isNativeMedia) return scanPaths(paths);
+  return invoke<Track[]>('import_paths', { paths });
+}
+
+/** Last-resort video source when the asset URL cannot be decoded. */
+export function mediaDataUrl(path: string): Promise<string> {
+  return invoke<string>('media_data_url', { path });
+}
+
 /** Media paths passed on the command line (e.g. `musicplayer ~/Music`). */
 export async function getInitialPaths(): Promise<string[]> {
   if (!isTauri) return [];
@@ -107,7 +118,7 @@ export async function pickFiles(): Promise<Track[]> {
       filters: [{ name: 'Media', extensions: MEDIA_EXTENSIONS }],
     });
     const paths = Array.isArray(selection) ? selection : selection ? [selection] : [];
-    return paths.length ? scanPaths(paths) : [];
+    return paths.length ? importPaths(paths) : [];
   }
   const { tracks } = await pickBrowserFiles(false);
   return tracks;
@@ -122,7 +133,7 @@ export async function pickFolder(): Promise<{ folder: string; tracks: Track[] } 
     });
     const folder = typeof selection === 'string' ? selection : null;
     if (!folder) return null;
-    return { folder, tracks: await scanPaths([folder]) };
+    return { folder, tracks: await importPaths([folder]) };
   }
 
   const { tracks, folder } = await pickBrowserFiles(true);
@@ -157,7 +168,9 @@ function browserTrack(file: File): Track | null {
     (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
 
   return {
-    id: `browser:${relative}:${file.size}:${file.lastModified}`,
+    // lastModified changes when a browser re-adds the same bytes over RPC, so
+    // keep the id stable from name + size to avoid duplicate library entries.
+    id: `browser:${relative}:${file.size}`,
     path: URL.createObjectURL(file),
     title: titleFromName(file.name),
     artist: null,
@@ -178,12 +191,43 @@ function withoutPath(track: Track): Omit<Track, 'path'> {
   return copy as Omit<Track, 'path'>;
 }
 
+/**
+ * Reads duration in the browser preview. Native builds get this from the Rust
+ * scanner; here we ask an <audio>/<video> element for its metadata.
+ */
+function readMediaDuration(file: File, kind: MediaKind): Promise<number> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (value: number) => {
+      if (settled) return;
+      settled = true;
+      URL.revokeObjectURL(url);
+      resolve(value);
+    };
+
+    const url = URL.createObjectURL(file);
+    const element = document.createElement(kind === 'video' ? 'video' : 'audio');
+    element.preload = 'metadata';
+    element.onloadedmetadata = () =>
+      done(Number.isFinite(element.duration) ? element.duration : 0);
+    element.onerror = () => done(0);
+    window.setTimeout(() => done(0), 5000);
+    element.src = url;
+  });
+}
+
 /** Reads dropped/picked files and keeps their bytes in IndexedDB. */
 export async function tracksFromBrowserFiles(files: File[]): Promise<Track[]> {
   const pairs = files
     .map((file) => ({ file, track: browserTrack(file) }))
     .filter((pair): pair is { file: File; track: Track } => pair.track !== null);
 
+  await Promise.all(
+    pairs.map(async ({ file, track }) => {
+      const duration = await readMediaDuration(file, track.kind);
+      if (duration > 0) track.duration = duration;
+    }),
+  );
   await Promise.all(
     pairs.map(({ file, track }) =>
       putBrowserTrack({ id: track.id, blob: file, track: withoutPath(track) }),

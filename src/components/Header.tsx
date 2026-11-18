@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { player } from '../lib/player';
 import { usePlayerValue } from '../hooks/usePlayerValue';
 import type { ViewName } from '../lib/types';
+import { primaryButton } from '../lib/ui';
 import { Icon } from './Icons';
 
 const TITLES: Record<string, string> = {
@@ -52,13 +53,13 @@ export function Header() {
   };
 
   return (
-    <header className="header">
-      <div className="header-title">
-        <h1>{search.trim() ? 'Search' : headerTitle(view)}</h1>
-      </div>
+    <header className="sticky top-0 z-20 flex items-center justify-between gap-5 border-b border-white/[0.08] bg-[#0a0a0b]/80 px-8 py-[14px] backdrop-blur-xl max-[1100px]:px-6 max-[720px]:gap-[10px] max-[720px]:px-4 max-[680px]:flex-wrap">
+      <h1 className="truncate text-[18px] font-bold tracking-[-0.02em] max-[720px]:max-w-[26vw] max-[720px]:text-[17px] max-[680px]:max-w-none">
+        {search.trim() ? 'Search' : headerTitle(view)}
+      </h1>
 
-      <div className="header-actions">
-        <label className="search">
+      <div className="flex shrink-0 items-center gap-2 max-[680px]:flex-1 max-[680px]:justify-end">
+        <label className="flex h-9 w-[260px] items-center gap-2 rounded-full border border-white/[0.08] bg-[#141417] px-3 text-[#6c6c75] transition-colors focus-within:border-white/[0.16] focus-within:bg-[#101012] max-[1100px]:w-[220px] max-[720px]:w-[150px] max-[680px]:min-w-[100px] max-[680px]:flex-1">
           <Icon name="search" size={16} />
           <input
             id="search-input"
@@ -67,11 +68,12 @@ export function Header() {
             placeholder="Search"
             onChange={(event) => player.setSearch(event.target.value)}
             spellCheck={false}
+            className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[#f5f5f7] outline-none placeholder:text-[#6c6c75]"
           />
           {search ? (
             <button
               type="button"
-              className="search-clear"
+              className="grid h-[22px] w-[22px] place-items-center rounded-full text-[#a2a2ab] transition hover:bg-[#1d1d21] hover:text-white"
               onClick={() => player.setSearch('')}
               aria-label="Clear search"
             >
@@ -80,35 +82,47 @@ export function Header() {
           ) : null}
         </label>
 
-        <div className="add-menu" ref={menuRef}>
+        <div className="relative flex items-center gap-2" ref={menuRef}>
           <button
-            className="button primary"
+            className={`${primaryButton} max-[720px]:w-9 max-[720px]:px-0`}
             onClick={() => setMenuView(menuOpen ? null : view)}
             title="Add music"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
             <Icon name="plus" size={17} />
-            <span>Add</span>
+            <span className="max-[720px]:hidden">Add</span>
           </button>
 
           {menuOpen ? (
-            <div className="menu" role="menu">
-              <button role="menuitem" onClick={() => run(() => player.addFolder())}>
+            <div
+              className="absolute right-0 top-[calc(100%+8px)] z-40 min-w-[200px] rounded-xl border border-white/[0.16] bg-[#141417] p-[6px] shadow-[0_18px_40px_rgba(0,0,0,0.5)]"
+              role="menu"
+            >
+              <button
+                role="menuitem"
+                className="flex w-full items-center gap-[10px] rounded-lg px-[10px] py-[9px] text-left text-[12.5px] font-medium text-[#a2a2ab] transition hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                onClick={() => run(() => player.addFolder())}
+              >
                 <Icon name="folder-plus" size={16} />
-                <span>Add folder</span>
+                Add folder
               </button>
-              <button role="menuitem" onClick={() => run(() => player.addFiles())}>
+              <button
+                role="menuitem"
+                className="flex w-full items-center gap-[10px] rounded-lg px-[10px] py-[9px] text-left text-[12.5px] font-medium text-[#a2a2ab] transition hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+                onClick={() => run(() => player.addFiles())}
+              >
                 <Icon name="file-plus" size={16} />
-                <span>Add files</span>
+                Add files
               </button>
-              <div className="menu-separator" />
+              <div className="mx-[6px] my-[5px] h-px bg-white/[0.08]" />
               <button
                 role="menuitem"
                 disabled={scanning}
+                className="flex w-full items-center gap-[10px] rounded-lg px-[10px] py-[9px] text-left text-[12.5px] font-medium text-[#a2a2ab] transition hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
                 onClick={() => run(() => player.rescan())}
               >
-                <Icon name="refresh" size={16} className={scanning ? 'spin' : undefined} />
+                <Icon name="refresh" size={16} className={scanning ? 'animate-spin' : undefined} />
                 <span>{scanning ? 'Scanning…' : 'Rescan library'}</span>
               </button>
             </div>

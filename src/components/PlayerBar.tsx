@@ -2,6 +2,16 @@ import { useState, type CSSProperties } from 'react';
 import { player } from '../lib/player';
 import { usePlayerValue } from '../hooks/usePlayerValue';
 import { formatTime, trackArtist, trackAlbum } from '../lib/utils';
+import {
+  badge,
+  iconButton,
+  playButton,
+  rangeInput,
+  rangeThumb,
+  rangeThumbHover,
+  rangeTrack,
+  timeLabel,
+} from '../lib/ui';
 import { Artwork } from './Artwork';
 import { Icon } from './Icons';
 
@@ -25,7 +35,7 @@ function SeekBar({ position, duration, onSeek, disabled }: SeekBarProps) {
 
   return (
     <input
-      className="seek-bar"
+      className={`${rangeInput} ${rangeTrack} ${rangeThumb} ${rangeThumbHover} min-w-0 flex-1`}
       type="range"
       min={0}
       max={max}
@@ -62,10 +72,10 @@ export function PlayerBar() {
   const volumeIcon = muted || volume === 0 ? 'mute' : volume < 0.5 ? 'volume-low' : 'volume';
 
   return (
-    <footer className="player-bar">
-      <div className="player-left">
+    <footer className="col-span-full row-start-2 z-40 grid h-[84px] grid-cols-[minmax(180px,1fr)_minmax(320px,2fr)_minmax(160px,1fr)] items-center gap-4 border-t border-white/[0.08] bg-[#0c0c0e] px-5 py-[10px] backdrop-blur-xl max-[900px]:grid-cols-[minmax(150px,1fr)_minmax(300px,2fr)_auto] max-[900px]:gap-[10px] max-[900px]:px-[14px] max-[680px]:h-[132px] max-[680px]:grid-cols-[minmax(0,1fr)_auto] max-[680px]:grid-rows-[auto_auto] max-[680px]:gap-x-[10px] max-[680px]:gap-y-[2px] max-[680px]:px-[14px] max-[680px]:py-2">
+      <div className="flex min-w-0 items-center gap-3 max-[680px]:col-start-1 max-[680px]:row-start-1">
         <button
-          className="player-art"
+          className="shrink-0 rounded-lg"
           onClick={() => player.setView('now')}
           title="Open now playing"
           aria-label="Open now playing"
@@ -77,21 +87,23 @@ export function PlayerBar() {
             alt={current?.title ?? 'Nothing playing'}
           />
         </button>
-        <div className="player-meta">
-          <div className="player-title-row">
-            <span className="player-title">{current?.title ?? 'Nothing playing'}</span>
-            {current?.kind === 'video' ? <span className="badge">VIDEO</span> : null}
+        <div className="flex min-w-0 flex-col gap-[2px]">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[13px] font-semibold">
+              {current?.title ?? 'Nothing playing'}
+            </span>
+            {current?.kind === 'video' ? <span className={badge}>VIDEO</span> : null}
           </div>
-          <span className="player-sub">
+          <span className="truncate text-[11.5px] text-[#a2a2ab]">
             {current ? `${trackArtist(current)} · ${trackAlbum(current)}` : 'Add music to begin'}
           </span>
         </div>
       </div>
 
-      <div className="player-center">
-        <div className="player-controls">
+      <div className="flex w-full min-w-0 flex-col items-center gap-1 max-[680px]:col-span-full max-[680px]:row-start-2">
+        <div className="flex items-center justify-center gap-[6px]">
           <button
-            className={`icon-button ${shuffle ? 'is-active' : ''}`}
+            className={`${iconButton} ${shuffle ? 'text-[#1ed760]' : ''}`}
             onClick={() => player.setShuffle(!shuffle)}
             title="Shuffle"
             aria-label="Shuffle"
@@ -101,7 +113,7 @@ export function PlayerBar() {
           </button>
 
           <button
-            className="icon-button"
+            className={iconButton}
             onClick={() => void player.previous()}
             title="Previous"
             aria-label="Previous"
@@ -111,7 +123,7 @@ export function PlayerBar() {
           </button>
 
           <button
-            className="play-button"
+            className={playButton}
             onClick={() => void player.toggle()}
             title={playing ? 'Pause' : 'Play'}
             aria-label={playing ? 'Pause' : 'Play'}
@@ -121,7 +133,7 @@ export function PlayerBar() {
           </button>
 
           <button
-            className="icon-button"
+            className={iconButton}
             onClick={() => void player.next()}
             title="Next"
             aria-label="Next"
@@ -131,7 +143,7 @@ export function PlayerBar() {
           </button>
 
           <button
-            className={`icon-button ${repeat !== 'off' ? 'is-active' : ''}`}
+            className={`${iconButton} ${repeat !== 'off' ? 'text-[#1ed760]' : ''}`}
             onClick={() => player.cycleRepeat()}
             title={repeat === 'one' ? 'Repeat one' : repeat === 'all' ? 'Repeat all' : 'Repeat off'}
             aria-label="Repeat"
@@ -141,16 +153,16 @@ export function PlayerBar() {
           </button>
         </div>
 
-        <div className="progress-row">
-          <span className="time">{formatTime(position)}</span>
+        <div className="flex w-full max-w-[640px] items-center gap-[10px]">
+          <span className={timeLabel}>{formatTime(position)}</span>
           <SeekBar position={position} duration={duration} onSeek={(value) => void player.seek(value)} />
-          <span className="time">{formatTime(duration)}</span>
+          <span className={timeLabel}>{formatTime(duration)}</span>
         </div>
       </div>
 
-      <div className="player-right">
+      <div className="flex items-center justify-end gap-1 max-[680px]:col-start-2 max-[680px]:row-start-1">
         <button
-          className="icon-button"
+          className={iconButton}
           onClick={() => player.toggleMute()}
           title={muted ? 'Unmute' : 'Mute'}
           aria-label={muted ? 'Unmute' : 'Mute'}
@@ -158,7 +170,7 @@ export function PlayerBar() {
           <Icon name={volumeIcon} size={18} />
         </button>
         <input
-          className="volume-bar"
+          className={`${rangeInput} ${rangeTrack} ${rangeThumb} ${rangeThumbHover} w-[92px] shrink-0 max-[1100px]:w-[70px] max-[900px]:hidden`}
           type="range"
           min={0}
           max={1}
@@ -169,7 +181,7 @@ export function PlayerBar() {
           aria-label="Volume"
         />
         <button
-          className="icon-button queue-button"
+          className={iconButton}
           onClick={() => player.setView('queue')}
           title="Queue"
           aria-label="Queue"
@@ -177,12 +189,12 @@ export function PlayerBar() {
           <Icon name="queue" size={18} />
         </button>
         <button
-          className="icon-button"
+          className={iconButton}
           onClick={() => player.setView('now')}
           title="Now playing"
           aria-label="Now playing"
         >
-          <Icon name="chevron-left" size={18} className="flip-horizontal" />
+          <Icon name="chevron-left" size={18} className="scale-x-[-1]" />
         </button>
       </div>
     </footer>

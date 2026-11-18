@@ -626,7 +626,17 @@ static SAVE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 pub fn load_saved_library(app: tauri::AppHandle) -> Option<SavedLibrary> {
     let file = saved_library_file(&app).ok()?;
     let raw = fs::read_to_string(file).ok()?;
-    serde_json::from_str(&raw).ok()
+    let mut saved: SavedLibrary = serde_json::from_str(&raw).ok()?;
+    // Drop entries whose local file has disappeared (moved/deleted by the user).
+    saved
+        .library
+        .retain(|track| Path::new(&track.path).is_file());
+    if let Some(id) = &saved.current_id {
+        if !saved.library.iter().any(|track| &track.id == id) {
+            saved.current_id = None;
+        }
+    }
+    Some(saved)
 }
 
 #[tauri::command]
@@ -672,6 +682,175 @@ pub async fn scan_paths(paths: Vec<String>) -> Result<Vec<Track>, String> {
     })
     .await
     .map_err(|err| format!("Could not scan media: {err}"))
+}
+
+#[tauri::command]
+pub async fn import_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<Vec<Track>, String> {
+    if paths.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let media_dir = app
+            .path()
+            .app_data_dir()
+            .map_err(|err| format!("Could not locate app data: {err}"))?
+            .join("media");
+        fs::create_dir_all(&media_dir)
+            .map_err(|err| format!("Could not create media folder: {err}"))?;
+
+        let mut imported = Vec::new();
+        let mut seen: HashSet<PathBuf> = HashSet::new();
+
+        for raw in paths {
+            let root = PathBuf::from(&raw);
+            let files: Vec<PathBuf> = if root.is_dir() {
+                WalkDir::new(&root)
+                    .follow_links(false)
+                    .into_iter()
+                    .filter_entry(|entry| !is_hidden(entry))
+                    .filter_map(Result::ok)
+                    .filter(|entry| entry.file_type().is_file())
+                    .map(|entry| entry.into_path())
+                    .collect()
+            } else if root.is_file() {
+                vec![root]
+            } else {
+                Vec::new()
+            };
+
+            for source in files {
+                if !seen.insert(source.clone()) || !is_media_file(&source) {
+                    continue;
+                }
+
+                // Already inside our library folder: reuse it as-is.
+                if source.starts_with(&media_dir) {
+                    if let Some(track) = track_from_path(&source) {
+                        imported.push(track);
+                    }
+                    continue;
+                }
+
+                let destination = local_media_path(&media_dir, &source);
+                if !destination.exists() {
+                    fs::copy(&source, &destination)
+                        .map_err(|err| format!("Could not copy {}: {err}", source.display()))?;
+                    copy_folder_art(&source, &destination);
+                }
+
+                if let Some(track) = track_from_path(&destination) {
+                    imported.push(track);
+                }
+            }
+        }
+
+        let audio = imported
+            .iter()
+            .filter(|track| track.kind == MediaKind::Audio)
+            .count();
+        log::info!(
+            "Imported {} file(s) into the local library: {} audio, {} video",
+            imported.len(),
+            audio,
+            imported.len() - audio
+        );
+        Ok(imported)
+    })
+    .await
+    .map_err(|err| format!("Could not import media: {err}"))?
+}
+
+/// Stable local filename: original name plus a hash of the absolute source
+/// path, so re-adding a folder reuses the same copies.
+fn local_media_path(media_dir: &Path, source: &Path) -> PathBuf {
+    let key = source
+        .canonicalize()
+        .unwrap_or_else(|_| source.to_path_buf())
+        .to_string_lossy()
+        .into_owned();
+    let mut hasher = DefaultHasher::new();
+    key.hash(&mut hasher);
+    let hash = format!("{:016x}", hasher.finish());
+
+    let name = source
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    media_dir.join(format!("{hash}-{name}"))
+}
+
+fn copy_folder_art(source: &Path, destination: &Path) {
+    let Some(dir) = source.parent() else { return };
+    let Some(dest_dir) = destination.parent() else {
+        return;
+    };
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+
+    for entry in entries.flatten() {
+        let candidate = entry.path();
+        if !candidate.is_file() || !image_extension(&candidate) {
+            continue;
+        }
+        let stem = candidate
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        if !COVER_NAMES.contains(&stem.as_str()) {
+            continue;
+        }
+        let ext = candidate
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("jpg");
+        let target = dest_dir.join(format!("cover.{ext}"));
+        if !target.exists() {
+            let _ = fs::copy(&candidate, &target);
+        }
+        break;
+    }
+}
+
+fn is_media_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| {
+            let ext = ext.to_ascii_lowercase();
+            AUDIO_EXTENSIONS.contains(&ext.as_str()) || VIDEO_EXTENSIONS.contains(&ext.as_str())
+        })
+        .unwrap_or(false)
+}
+
+#[tauri::command]
+pub fn media_data_url(path: String) -> Result<String, String> {
+    let file = PathBuf::from(&path);
+    let size = fs::metadata(&file)
+        .map_err(|err| format!("Could not read video: {err}"))?
+        .len();
+    if size > 120 * 1024 * 1024 {
+        return Err("Video is too large for the in-memory fallback player".into());
+    }
+    let bytes = fs::read(&file).map_err(|err| format!("Could not read video: {err}"))?;
+    let mime = match file
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "mp4" | "m4v" => "video/mp4",
+        "webm" => "video/webm",
+        "mkv" => "video/x-matroska",
+        "mov" => "video/quicktime",
+        "ogv" => "video/ogg",
+        "avi" => "video/x-msvideo",
+        _ => "application/octet-stream",
+    };
+    Ok(format!("data:{mime};base64,{}", STANDARD.encode(bytes)))
 }
 
 #[tauri::command]

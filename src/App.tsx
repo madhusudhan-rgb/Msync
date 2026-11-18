@@ -216,12 +216,15 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app">
+    <div className="grid h-full grid-cols-[232px_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_84px] bg-[#0a0a0b] font-['Inter_Variable',system-ui,sans-serif] text-[#f5f5f7] max-[900px]:grid-cols-[76px_minmax(0,1fr)] max-[680px]:grid-cols-[minmax(0,1fr)] max-[680px]:grid-rows-[minmax(0,1fr)_132px_58px]">
       <Sidebar />
 
-      <main className="content" ref={contentRef}>
+      <main
+        className="relative col-start-2 row-start-1 min-w-0 overflow-x-hidden overflow-y-auto bg-[#0a0a0b] [&::-webkit-scrollbar]:h-[10px] [&::-webkit-scrollbar]:w-[10px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-white/[0.14] [&::-webkit-scrollbar-thumb]:bg-clip-content [&::-webkit-scrollbar-track]:bg-transparent max-[680px]:col-start-1"
+        ref={contentRef}
+      >
         <Header />
-        <div className="content-inner">
+        <div className="mx-auto max-w-[1240px] px-8 pb-12 pt-[18px] max-[1100px]:px-6 max-[720px]:px-4 max-[720px]:pb-10 max-[680px]:pt-1">
           <MainView />
         </div>
       </main>
@@ -230,20 +233,24 @@ export default function App() {
       <PlayerBar />
 
       {error ? (
-        <div className="toast" role="alert">
+        <div className="fixed bottom-[calc(84px+16px)] right-5 z-[80] flex max-w-[440px] items-start gap-[14px] rounded-[10px] border border-[#ff6b6b]/35 border-l-[3px] border-l-[#ff6b6b] bg-[#1b1416] px-4 py-3 text-[12.5px] leading-relaxed text-[#ffd9d9] shadow-[0_18px_40px_rgba(0,0,0,0.45)] max-[680px]:bottom-[calc(132px+58px+12px)] max-[680px]:left-3 max-[680px]:right-3 max-[680px]:max-w-none" role="alert">
           <span>{error}</span>
-          <button onClick={player.clearError} aria-label="Dismiss message">
+          <button
+            className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full text-[#ffb3b3] hover:bg-[#ff6b6b]/15 hover:text-white"
+            onClick={player.clearError}
+            aria-label="Dismiss message"
+          >
             <Icon name="close" size={14} />
           </button>
         </div>
       ) : null}
 
       {dragging ? (
-        <div className="drop-overlay" aria-hidden="true">
-          <div className="drop-card">
+        <div className="pointer-events-none fixed inset-0 z-[90] grid place-items-center bg-[#050806]/75 p-7 backdrop-blur-lg" aria-hidden="true">
+          <div className="flex w-full max-w-[560px] flex-col items-center gap-2 rounded-[20px] border-2 border-dashed border-white/25 bg-[#0f180f]/70 px-10 py-12 text-center text-[#1ed760]">
             <Icon name="folder-plus" size={34} />
-            <h2>Drop to add to your library</h2>
-            <p>Audio and video files, or a whole folder.</p>
+            <h2 className="text-[21px] font-bold text-white">Drop to add to your library</h2>
+            <p className="text-[13px] text-[#a2a2ab]">Audio and video files, or a whole folder.</p>
           </div>
         </div>
       ) : null}

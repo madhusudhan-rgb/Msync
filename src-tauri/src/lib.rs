@@ -72,6 +72,8 @@ pub fn run() {
             audio_stop,
             audio_status,
             library::scan_paths,
+            library::import_paths,
+            library::media_data_url,
             library::track_art,
             library::initial_paths,
             library::load_saved_library,
