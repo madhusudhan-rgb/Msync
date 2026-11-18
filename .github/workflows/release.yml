@@ -73,13 +73,8 @@ jobs:
           java-version: '17'
 
       - uses: android-actions/setup-android@v3
-
-      - name: Setup Android NDK
-        uses: nttld/setup-ndk@v1
-        id: setup-ndk
         with:
-          ndk-version: r25c
-          link-to-sdk: true
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0 ndk;25.2.9519653'
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -89,12 +84,12 @@ jobs:
 
       - name: Initialize Android project
         env:
-          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
         run: npm run tauri android init --ci --skip-targets-install
 
       - name: Build Android app
         env:
-          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
         run: npm run tauri android build --ci --apk --aab --split-per-abi
 
       - name: Upload Android artifacts
