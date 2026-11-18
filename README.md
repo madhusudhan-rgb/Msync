@@ -19,7 +19,7 @@ The idea is simple: point it at your files, press play, and stay out of the way.
 - **Proper metadata.** Titles, artists, albums, track/disc numbers and durations from embedded tags, plus cover art from the file, a `cover.jpg`/`folder.png` beside it, or a public artwork lookup (Deezer, then iTunes) that is cached locally.
 - **Spotify-style, but minimal.** Just the library, a search field, and the player. Album/artist views, sortable track lists, queue, keyboard shortcuts, dark UI.
 - **Player basics done right.** Play/pause, next/previous, seek, volume, mute, shuffle, repeat off/all/one, auto-advance.
-- **No database.** Playlists and preferences are stored in `localStorage`; the backend is stateless.
+- **No database.** Added files are copied into the app's own local library folder; the list and preferences are stored in a JSON file in app data, with a `localStorage` backup on desktop and IndexedDB for browser previews.
 - **Open with.** `musicplayer ~/Music` (or a file) loads it on launch.
 
 The only network requests are artwork lookups for tracks without local cover art; they send the artist and album names and cache the result. Your files and preferences never leave the device.
@@ -79,7 +79,7 @@ npm run tauri android dev
 npm run tauri ios dev
 ```
 
-On mobile, the app uses the system webview's audio/video pipeline rather than the Rust decoder, because Android and iOS hand out `content://` URIs instead of filesystem paths. Mobile format support is therefore whatever the OS supports, and blob-backed tracks are not persisted across restarts. Full mobile library persistence would require copying picked files into app storage.
+On mobile, the app uses the system webview's audio/video pipeline rather than the Rust decoder, because Android and iOS hand out `content://` URIs instead of filesystem paths. Mobile format support is therefore whatever the OS supports; blob-backed tracks are stored in IndexedDB.
 
 ## Using it
 
@@ -108,7 +108,7 @@ src-tauri/
 
 Audio playback runs on its own thread behind a command channel, because the OS audio stream cannot be shared across threads. The frontend polls `audio_status` at 250 ms; video is driven by a single `<video>` element that moves between the player bar and the immersive stage.
 
-The asset protocol is enabled for all paths so video files can be streamed with range requests. The app only loads local media and has no remote content; if you plan to add remote pages, tighten `app.security.assetProtocol.scope` in `src-tauri/tauri.conf.json`.
+The asset protocol is enabled for app data, cache, and home paths so video files can be streamed with range requests. If a webview cannot open a local file through the asset URL, the player retries the same MP4/WebM bytes through a data URL before reporting a codec error. The app only loads local media and has no remote content; tighten `app.security.assetProtocol.scope` in `src-tauri/tauri.conf.json` if you add remote pages.
 
 ## Scripts
 
