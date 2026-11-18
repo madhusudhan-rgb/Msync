@@ -74,6 +74,13 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r25c
+          link-to-sdk: true
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
@@ -81,9 +88,13 @@ jobs:
       - run: npm ci
 
       - name: Initialize Android project
-        run: npm run tauri android init --ci
+        env:
+          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: npm run tauri android init --ci --skip-targets-install
 
       - name: Build Android app
+        env:
+          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: npm run tauri android build --ci --apk --aab --split-per-abi
 
       - name: Upload Android artifacts
