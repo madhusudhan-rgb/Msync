@@ -1,0 +1,13 @@
+[package]
+name = "musicplayer23"
+version = "0.1.0"
+description = "Tauri music player desktop app"
+authors = ["Music Player"]
+edition = "2024"
+
+[dependencies]
+tauri = { version = "2", features = ["dialog-all", "fs-all", "audio"] }
+tauri-plugin-log = "2"
+
+[build-dependencies]
+tauri-build = { version = "2" }
