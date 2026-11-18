@@ -1,0 +1,25 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+// Tauri expects a fixed port and provides TAURI_DEV_HOST when developing on
+// physical mobile devices (so the device can reach the dev server).
+const host = process.env.TAURI_DEV_HOST;
+
+export default defineConfig({
+  plugins: [react()],
+  clearScreen: false,
+  server: {
+    port: 3000,
+    strictPort: true,
+    host: host || false,
+    hmr: host ? { protocol: 'ws', host, port: 3001 } : undefined,
+    watch: {
+      ignored: ['**/src-tauri/**'],
+    },
+  },
+  build: {
+    target: 'es2022',
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+});

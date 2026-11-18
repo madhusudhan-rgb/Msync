@@ -1,4 +1,10 @@
->VERSION 1.1.0<
-Not much has been done except a few ui updates
+> VERSION 1.0.0 — Tauri rebuild
 
+The React Native/Expo prototype has been replaced by a Tauri 2 desktop app
+with a React frontend and a Rust audio engine.
 
+- Native audio decoding (MP3, FLAC, WAV, OGG, M4A/AAC/ALAC, AIFF, CAF, ...)
+- Video playback through the system webview
+- Folder library, drag and drop, metadata and cover art
+- Album/artist views, queue, shuffle, repeat, keyboard shortcuts
+- No database: library and preferences are stored locally

@@ -1,31 +1,41 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "musicplayer23",
-  "version": "0.1.0",
+  "productName": "Musicplayer",
+  "version": "1.0.0",
   "identifier": "com.musicplayer.app",
   "build": {
-    "frontendDist": "../tauri-frontend/dist",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "npm run dev --prefix tauri-frontend",
-    "beforeBuildCommand": "npm run build --prefix tauri-frontend"
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
       {
-        "title": "musicplayer23",
-        "width": 900,
-        "height": 700,
+        "label": "main",
+        "title": "Musicplayer",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 860,
+        "minHeight": 560,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "dragDropEnabled": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Music",
+    "shortDescription": "A minimal music and video player",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

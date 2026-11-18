@@ -1,19 +1,26 @@
-// https://docs.expo.dev/guides/using-eslint/
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import tseslint from 'typescript-eslint';
 
-module.exports = defineConfig([
-  expoConfig,
+export default tseslint.config(
+  { ignores: ['dist', 'src-tauri', 'node_modules'] },
   {
-    ignores: ['dist/*'],
-  },
-  {
-    rules: {
-      'react-hooks/react-compiler': 'off',
-      'react-hooks/set-state-in-effect': 'off',
-      'react/no-unescaped-entities': 'off',
-      'react-hooks/refs': 'off',
-      'import/no-duplicates': 'off',
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.browser,
     },
-  }
-]);
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+);
