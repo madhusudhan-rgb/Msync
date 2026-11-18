@@ -112,6 +112,7 @@ The asset protocol is enabled for app data, cache, and home paths so video files
 
 | Command | Description |
 | --- | --- |
+|`If you encounter a GLIB error of any sort use GDK_BACKEND=x11 npm run app or use cargo tauri dev`|
 | `npm run app/cargo tauri dev` | Run the desktop app with hot reload |
 | `npm run dev` | Run only the web frontend (browser preview) |
 | `npm run build` | Type-check and build the frontend |
