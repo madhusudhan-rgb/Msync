@@ -13,6 +13,7 @@ const TITLES: Record<string, string> = {
   artists: 'Artists',
   artist: 'Artists',
   videos: 'Videos',
+  settings: 'Settings',
   queue: 'Queue',
   now: 'Now playing',
 };

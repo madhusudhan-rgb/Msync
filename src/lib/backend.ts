@@ -249,6 +249,13 @@ export function forgetBrowserTrack(id: string): void {
   if (id.startsWith('browser:')) void removeBrowserTrack(id);
 }
 
+export function clearArtCache(): Promise<void> {
+  if (!isNativeMedia) return Promise.resolve();
+  return invoke('clear_art_cache')
+    .then(() => undefined)
+    .catch(() => undefined);
+}
+
 async function pickBrowserFiles(directory: boolean): Promise<{
   tracks: Track[];
   folder: string | null;

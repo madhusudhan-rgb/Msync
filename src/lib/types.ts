@@ -37,7 +37,8 @@ export type ViewName =
   | 'queue'
   | 'now'
   | 'album'
-  | 'artist';
+  | 'artist'
+  | 'settings';
 
 export interface PlayerState {
   library: Track[];

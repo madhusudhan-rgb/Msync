@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { player } from '../lib/player';
 import { usePlayerValue } from '../hooks/usePlayerValue';
+import * as backend from '../lib/backend';
 import {
   UNKNOWN_ALBUM,
   formatTotalDuration,
@@ -45,10 +46,7 @@ import { TrackList } from './TrackList';
 export function EmptyLibrary() {
   return (
     <div className={emptyState}>
-      <span className={emptyIcon}>
-        <Icon name="music" size={30} />
-      </span>
-      <h2 className={emptyTitle}>Your library is empty</h2>
+     
       <p className={emptyText}>
         Point the player at a folder of music, or add a few files. Nothing is copied or uploaded.
       </p>
@@ -441,10 +439,8 @@ export function VideosView() {
   if (!library.some((track) => track.kind === 'video')) {
     return (
       <div className={emptyState}>
-        <span className={emptyIcon}>
-          <Icon name="film" size={30} />
-        </span>
-        <h2 className={emptyTitle}>No videos yet</h2>
+       
+        <h2 className={emptyTitle}>No videos added</h2>
         <p className={emptyText}>
           Add MP4, WebM, or other video files. Video uses the system webview, so format support
           depends on your platform codecs.
@@ -462,7 +458,7 @@ export function VideosView() {
     <Section meta={`${tracks.length} ${tracks.length === 1 ? 'clip' : 'clips'}`}>
       <TrackList
         tracks={tracks}
-        showArt={false}
+        showArt={true}
         showAlbum={false}
         showKind
         sortable
@@ -472,6 +468,116 @@ export function VideosView() {
   );
 }
 
+export function SettingsView() {
+  const volume = usePlayerValue((state) => state.volume);
+  const muted = usePlayerValue((state) => state.muted);
+  const shuffle = usePlayerValue((state) => state.shuffle);
+  const repeat = usePlayerValue((state) => state.repeat);
+  const folders = usePlayerValue((state) => state.folders);
+  const scanning = usePlayerValue((state) => state.scanning);
+  const librarySize = usePlayerValue((state) => state.library.length);
+
+  const volumeIcon = muted || volume === 0 ? 'mute' : volume < 0.5 ? 'volume-low' : 'volume';
+
+  return (
+    <div className="mx-auto max-w-[760px]">
+      <Section title="Settings">
+        <div className="rounded-xl border border-white/[0.08] bg-[#141417] p-4">
+          <h3 className="text-[14px] font-semibold">Playback</h3>
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              className="grid h-[34px] w-[34px] place-items-center rounded-full text-[#a2a2ab] transition hover:bg-white/[0.07] hover:text-white"
+              onClick={() => player.toggleMute()}
+              title={muted ? 'Unmute' : 'Mute'}
+              aria-label={muted ? 'Unmute' : 'Mute'}
+            >
+              <Icon name={volumeIcon} size={18} />
+            </button>
+            <input
+              className="h-4 flex-1 cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/[0.16] [&::-webkit-slider-thumb]:mt-[-4px] [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={muted ? 0 : volume}
+              onChange={(event) => player.setVolume(Number(event.target.value))}
+              aria-label="Volume"
+            />
+            <span className="min-w-[38px] text-right text-[10.5px] tabular-nums text-[#6c6c75]">
+              {Math.round((muted ? 0 : volume) * 100)}%
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              className={`inline-flex h-9 items-center gap-[7px] rounded-full border border-white/[0.16] bg-[#141417] px-[18px] text-[13px] font-semibold transition hover:bg-[#1d1d21] ${
+                shuffle ? 'border-[#1ed760]/40 text-[#1ed760]' : 'text-white'
+              }`}
+              onClick={() => player.setShuffle(!shuffle)}
+            >
+              <Icon name="shuffle" size={16} /> Shuffle {shuffle ? 'on' : 'off'}
+            </button>
+            <button
+              className="inline-flex h-9 items-center gap-[7px] rounded-full border border-white/[0.16] bg-[#141417] px-[18px] text-[13px] font-semibold text-white transition hover:bg-[#1d1d21]"
+              onClick={() => player.cycleRepeat()}
+            >
+              <Icon name="repeat" size={16} /> Repeat {repeat}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#141417] p-4">
+          <h3 className="text-[14px] font-semibold">Library</h3>
+          <p className="mt-1 text-[12px] text-[#a2a2ab]">
+            {librarySize} track{librarySize === 1 ? '' : 's'} · Added files are copied into the app
+            data folder, so they stay available after restarts.
+          </p>
+
+          {folders.length ? (
+            <ul className="mt-3 space-y-1">
+              {folders.map((folder) => (
+                <li
+                  key={folder}
+                  className="truncate rounded-lg bg-[#101012] px-3 py-2 text-[12px] text-[#a2a2ab]"
+                  title={folder}
+                >
+                  {folder}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-[12px] text-[#6c6c75]">No folders added yet.</p>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              className="inline-flex h-9 items-center gap-[7px] rounded-full bg-[#1ed760] px-[18px] text-[13px] font-semibold text-[#04140a] transition hover:bg-[#2ce06c] disabled:opacity-35"
+              disabled={scanning}
+              onClick={() => void player.rescan()}
+            >
+              <Icon name="refresh" size={16} className={scanning ? 'animate-spin' : undefined} />
+              {scanning ? 'Scanning…' : 'Rescan library'}
+            </button>
+            <button
+              className="inline-flex h-9 items-center gap-[7px] rounded-full border border-white/[0.16] bg-[#141417] px-[18px] text-[13px] font-semibold text-white transition hover:bg-[#1d1d21]"
+              onClick={() => void backend.clearArtCache()}
+            >
+              Clear artwork cache
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-white/[0.08] bg-[#141417] p-4">
+          <h3 className="text-[14px] font-semibold">About</h3>
+          <p className="mt-1 text-[12px] text-[#a2a2ab]">
+            Musicplayer · desktop audio via Rust (rodio + symphonia), video via the system webview.
+            Artwork is fetched from Deezer, then iTunes, and cached locally.
+          </p>
+        </div>
+      </Section>
+    </div>
+  );
+}
 export function QueueView() {
   const queue = usePlayerValue((state) => state.queue);
   const queueIndex = usePlayerValue((state) => state.queueIndex);
@@ -535,3 +641,4 @@ export function QueueView() {
     </>
   );
 }
+

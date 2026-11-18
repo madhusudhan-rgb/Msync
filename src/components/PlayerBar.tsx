@@ -81,7 +81,7 @@ export function PlayerBar() {
           aria-label="Open now playing"
         >
           <Artwork
-            path={current?.kind === 'audio' ? current.path : null}
+            path={current?.path ?? null}
             seed={current?.album ?? current?.title ?? 'Musicplayer'}
             size="md"
             alt={current?.title ?? 'Nothing playing'}

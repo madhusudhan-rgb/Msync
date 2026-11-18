@@ -26,47 +26,30 @@ export function Artwork({
   alt = '',
   shape = 'square',
   size = 'md',
-  lazy = false,
+  lazy: _lazy = false,
   className = '',
 }: ArtworkProps) {
-  const [loaded, setLoaded] = useState<{ path: string; src: string | null } | null>(null);
+  const [src, setSrc] = useState<string | null>(null);
+  const [prevPath, setPrevPath] = useState<string | null | undefined>(path);
+  if (prevPath !== path) {
+    setPrevPath(path);
+    setSrc(null);
+  }
+
   const holder = useRef<HTMLSpanElement>(null);
-  const src = loaded && loaded.path === path ? loaded.src : null;
 
   useEffect(() => {
     if (!path) return;
 
     let cancelled = false;
-    const load = () => {
-      void loadArtwork(path).then((art) => {
-        if (!cancelled) setLoaded({ path, src: art });
-      });
-    };
-
-    const element = holder.current;
-    if (!lazy || !element || typeof IntersectionObserver === 'undefined') {
-      load();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          observer.disconnect();
-          load();
-        }
-      },
-      { rootMargin: '300px' },
-    );
-    observer.observe(element);
+    void loadArtwork(path).then((art) => {
+      if (!cancelled) setSrc(art);
+    });
 
     return () => {
       cancelled = true;
-      observer.disconnect();
     };
-  }, [path, lazy]);
+  }, [path]);
 
   const radius = shape === 'round' ? 'rounded-full' : sizes[size].match(/rounded[^\s]*/)?.[0] ?? 'rounded-lg';
   const shapeSize = shape === 'round' ? sizes[size].replace(/rounded[^\s]*/g, '').trim() : sizes[size];
@@ -78,7 +61,7 @@ export function Artwork({
       title={alt || undefined}
     >
       {src ? (
-        <img src={src} alt={alt} draggable={false} loading="lazy" className="h-full w-full object-cover" />
+        <img src={src} alt={alt} draggable={false} className="h-full w-full object-cover" />
       ) : (
         <span className="grid h-full w-full place-items-center">
           <Icon name="note" size={size === 'xs' ? 14 : size === 'sm' ? 17 : 22} />

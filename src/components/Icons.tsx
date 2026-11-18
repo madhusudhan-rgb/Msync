@@ -27,6 +27,7 @@ import {
   IoVolumeHighOutline,
   IoVolumeLowOutline,
   IoVolumeOffOutline,
+  IoSettingsOutline,
 } from 'react-icons/io5';
 
 export type IconName =
@@ -56,7 +57,8 @@ export type IconName =
   | 'chevron-left'
   | 'spinner'
   | 'check'
-  | 'plus';
+  | 'plus'
+  | 'settings';
 
 const ICONS: Record<IconName, IconType> = {
   home: IoHomeOutline,
@@ -86,6 +88,7 @@ const ICONS: Record<IconName, IconType> = {
   spinner: IoReloadOutline,
   check: IoCheckmarkOutline,
   plus: IoAddOutline,
+  settings: IoSettingsOutline,
 };
 
 interface IconProps {

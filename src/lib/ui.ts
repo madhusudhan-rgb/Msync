@@ -4,7 +4,7 @@
  */
 
 export const primaryButton =
-  'inline-flex h-9 items-center justify-center gap-[7px] whitespace-nowrap rounded-full bg-[#1ed760] px-[18px] text-[13px] font-semibold text-[#04140a] transition hover:bg-[#2ce06c] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-35';
+  'inline-flex h-9 items-center justify-center gap-[7px] whitespace-nowrap rounded-full bg-white px-[18px] text-[13px] font-semibold text-[#04140a] transition hover:bg-gray-500 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-35';
 
 export const secondaryButton =
   'inline-flex h-9 items-center justify-center gap-[7px] whitespace-nowrap rounded-full border border-white/[0.16] bg-[#141417] px-[18px] text-[13px] font-semibold text-white transition hover:bg-[#1d1d21] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-35';
@@ -22,7 +22,7 @@ export const badge =
   'inline-flex h-4 shrink-0 items-center rounded bg-[#1ed760]/15 px-[5px] text-[8.5px] font-extrabold tracking-[0.08em] text-[#1ed760]';
 
 export const emptyState =
-  'mx-auto my-10 flex max-w-[540px] flex-col items-center gap-[10px] rounded-2xl border border-white/[0.08] bg-[#141417] p-9 text-center max-[680px]:my-7 max-[680px]:p-7';
+  'mx-auto my-10 flex max-w-[540px] flex-col items-center gap-[10px] rounded-2xl bg-transparent p-9 text-center max-[680px]:my-7 max-[680px]:p-7';
 
 export const emptyIcon =
   'mb-[6px] grid h-14 w-14 place-items-center rounded-full bg-[#1ed760]/15 text-[#1ed760]';
@@ -57,9 +57,9 @@ export const cardGrid =
 export const mediaCard = 'group flex flex-col gap-1 text-left';
 
 export const cardArt =
-  'mb-[10px] aspect-square w-full rounded-[10px] border border-white/[0.08] transition-transform duration-200 group-hover:scale-[1.22]';
+  'mb-[10px] transition-transform duration-200 group-hover:scale-[1.12]';
 
-export const cardName = 'truncate text-[13px] font-semibold tracking-[-0.01em]';
+export const cardName = 'truncate text-[13px] font-semibold tracking-[-0.01em] ';
 
 export const cardSub = 'truncate text-[11.5px] text-[#6c6c75]';
 

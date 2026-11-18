@@ -326,7 +326,17 @@ fn folder_art(path: &Path) -> Option<String> {
             .and_then(|stem| stem.to_str())
             .map(|stem| stem.to_ascii_lowercase())
             .unwrap_or_default();
-        if COVER_NAMES.contains(&stem.as_str()) {
+        let expected_cover = path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .and_then(|stem| stem.split('-').next())
+            .map(|hash| format!("{}-cover", hash));
+        if COVER_NAMES.contains(&stem.as_str())
+            || expected_cover
+                .as_deref()
+                .map(|expected| expected == stem)
+                .unwrap_or(false)
+        {
             candidates.push(candidate);
         }
     }
@@ -739,7 +749,20 @@ pub async fn import_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<V
                     copy_folder_art(&source, &destination);
                 }
 
-                if let Some(track) = track_from_path(&destination) {
+                // Keep the original file name and tags as the display metadata, but
+                // store the local copy as the playable path.
+                if let Some(mut track) = track_from_path(&source) {
+                    track.id = destination.to_string_lossy().to_string();
+                    track.path = destination.to_string_lossy().to_string();
+                    if let Ok(metadata) = fs::metadata(&destination) {
+                        track.size = metadata.len();
+                        track.modified = metadata
+                            .modified()
+                            .ok()
+                            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+                            .map(|since| since.as_millis() as u64)
+                            .unwrap_or(track.modified);
+                    }
                     imported.push(track);
                 }
             }
@@ -764,6 +787,16 @@ pub async fn import_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<V
 /// Stable local filename: original name plus a hash of the absolute source
 /// path, so re-adding a folder reuses the same copies.
 fn local_media_path(media_dir: &Path, source: &Path) -> PathBuf {
+    let hash = media_hash(source);
+    let name = source
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    media_dir.join(format!("{hash}-{name}"))
+}
+
+fn media_hash(source: &Path) -> String {
     let key = source
         .canonicalize()
         .unwrap_or_else(|_| source.to_path_buf())
@@ -771,14 +804,7 @@ fn local_media_path(media_dir: &Path, source: &Path) -> PathBuf {
         .into_owned();
     let mut hasher = DefaultHasher::new();
     key.hash(&mut hasher);
-    let hash = format!("{:016x}", hasher.finish());
-
-    let name = source
-        .file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .into_owned();
-    media_dir.join(format!("{hash}-{name}"))
+    format!("{:016x}", hasher.finish())
 }
 
 fn copy_folder_art(source: &Path, destination: &Path) {
@@ -803,11 +829,12 @@ fn copy_folder_art(source: &Path, destination: &Path) {
         if !COVER_NAMES.contains(&stem.as_str()) {
             continue;
         }
+        let hash = media_hash(&source);
         let ext = candidate
             .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("jpg");
-        let target = dest_dir.join(format!("cover.{ext}"));
+        let target = dest_dir.join(format!("{hash}-cover.{ext}"));
         if !target.exists() {
             let _ = fs::copy(&candidate, &target);
         }
@@ -826,33 +853,55 @@ fn is_media_file(path: &Path) -> bool {
 }
 
 #[tauri::command]
-pub fn media_data_url(path: String) -> Result<String, String> {
-    let file = PathBuf::from(&path);
-    let size = fs::metadata(&file)
-        .map_err(|err| format!("Could not read video: {err}"))?
-        .len();
-    if size > 120 * 1024 * 1024 {
-        return Err("Video is too large for the in-memory fallback player".into());
-    }
-    let bytes = fs::read(&file).map_err(|err| format!("Could not read video: {err}"))?;
-    let mime = match file
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("")
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "mp4" | "m4v" => "video/mp4",
-        "webm" => "video/webm",
-        "mkv" => "video/x-matroska",
-        "mov" => "video/quicktime",
-        "ogv" => "video/ogg",
-        "avi" => "video/x-msvideo",
-        _ => "application/octet-stream",
-    };
-    Ok(format!("data:{mime};base64,{}", STANDARD.encode(bytes)))
+pub async fn media_data_url(path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = PathBuf::from(&path);
+        let size = fs::metadata(&file)
+            .map_err(|err| format!("Could not read video: {err}"))?
+            .len();
+        if size > 120 * 1024 * 1024 {
+            return Err("Video is too large for the in-memory fallback player".into());
+        }
+        let bytes = fs::read(&file).map_err(|err| format!("Could not read video: {err}"))?;
+        let mime = match file
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "mp4" | "m4v" => "video/mp4",
+            "webm" => "video/webm",
+            "mkv" => "video/x-matroska",
+            "mov" => "video/quicktime",
+            "ogv" => "video/ogg",
+            "avi" => "video/x-msvideo",
+            _ => "application/octet-stream",
+        };
+        Ok(format!("data:{mime};base64,{}", STANDARD.encode(bytes)))
+    })
+    .await
+    .map_err(|err| format!("Could not read video: {err}"))?
 }
 
+#[tauri::command]
+pub fn clear_art_cache(
+    state: tauri::State<'_, LibraryState>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    if let Ok(mut cache) = state.art_cache.lock() {
+        cache.clear();
+    }
+    if let Some(dir) = app
+        .path()
+        .app_cache_dir()
+        .ok()
+        .map(|dir| dir.join("artwork"))
+    {
+        let _ = fs::remove_dir_all(dir);
+    }
+    Ok(())
+}
 #[tauri::command]
 pub async fn track_art(
     path: String,
@@ -944,5 +993,19 @@ mod tests {
             .expect("Deezer request")
             .expect("cover art for Discovery");
         assert!(art.starts_with("data:image/"), "unexpected art prefix");
+    }
+}
+
+#[cfg(test)]
+mod artwork_debug4 {
+    use super::*;
+
+    #[test]
+    fn debug_artwork_still() {
+        let path = "/home/mt/.local/share/com.musicplayer.app/media/ab29d7e7518a6493-still love you (Slowed).mp3";
+        println!(
+            "STILL_ART={:?}",
+            local_art(std::path::Path::new(path)).map(|s| s.chars().take(32).collect::<String>())
+        );
     }
 }

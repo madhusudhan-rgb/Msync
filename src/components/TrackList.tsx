@@ -121,7 +121,7 @@ export function TrackList({
       <div
         className={`mb-[6px] grid h-[30px] items-center gap-3 border-b border-white/[0.08] px-2 text-[11px] tracking-[0.04em] text-[#6c6c75] ${grid}`}
       >
-        <span className="pr-[8px] text-right">#</span>
+        <span className="pr-[8px] text-right"></span>
         {showArt ? <span className="max-[460px]:hidden" /> : null}
         <span className="min-w-0 truncate">
           {sortable ? (
@@ -199,7 +199,7 @@ export function TrackList({
               {showArt ? (
                 <span className="max-[460px]:hidden">
                   <Artwork
-                    path={track.kind === 'audio' ? track.path : null}
+                    path={track.path}
                     seed={track.album ?? track.title}
                     size="sm"
                     lazy

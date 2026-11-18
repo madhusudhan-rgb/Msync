@@ -75,6 +75,7 @@ pub fn run() {
             library::import_paths,
             library::media_data_url,
             library::track_art,
+            library::clear_art_cache,
             library::initial_paths,
             library::load_saved_library,
             library::save_saved_library
