@@ -98,7 +98,7 @@ static void drop_callback(GLFWwindow*, int count, const char** paths) {
     }
     if (current_index < 0 && !playlist.empty()) play_index(0);
 }
-
+//func that renders ui and its pretty obvious it does lol its in the name
 void render_ui()
 {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
@@ -134,10 +134,10 @@ void render_ui()
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
     ImGui::InputText("Folder", folder_buf, sizeof(folder_buf));
     ImGui::SameLine();
-    // if (ImGui::Button("Browse...##folder")) {
-    //     std::string p = run_zenity("--file-selection --directory --title=\"Select music folder\"");
-    //     if (!p.empty()) std::strncpy(folder_buf, p.c_str(), sizeof(folder_buf) - 1);
-    // }
+    if (ImGui::Button("Browse...##folder")) {
+        std::string p = run_zenity("--file-selection --directory --title=\"Select music folder\"");
+        if (!p.empty()) std::strncpy(folder_buf, p.c_str(), sizeof(folder_buf) - 1);
+    }
     ImGui::SameLine();
     if (ImGui::Button("Add Folder")) {
         if (folder_buf[0]) {
@@ -169,7 +169,7 @@ void render_ui()
         }
     }
     if (!status_msg.empty()) ImGui::TextColored(ImVec4(0.8f, 0.9f, 0.3f, 1.0f), "%s", status_msg.c_str());
-    ImGui::TextDisabled("Tip: drag & drop files or folders onto the window.");
+    ImGui::TextDisabled("Tip: drag & drop files or folders onto the window or select files");
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -186,7 +186,7 @@ void render_ui()
         float fdur = (float)dur;
         if (fdur <= 0.0f) fdur = 1.0f;
 
-        if (ImGui::SliderFloat("Seek", &fpos, 0.0f, fdur, "%.1f s")) {
+        if (ImGui::SliderFloat("", &fpos, 0.0f, fdur, "%.1f s")) {
             mp3::seek(fpos);
         }
         ImGui::Text("Time: %.1f / %.1f s", pos, dur);
@@ -224,7 +224,7 @@ void render_ui()
     ImGui::Separator();
 
     // ---- playlist ----
-    ImGui::Text("Playlist (%d)", (int)playlist.size());
+    //ImGui::Text("Playlist (%d)", (int)playlist.size());
     if (ImGui::Button("Remove Selected") && selected >= 0 && selected < (int)playlist.size()) {
         playlist.erase(playlist.begin() + selected);
         if (playlist.empty()) { current_index = -1; mp3::stop(); }
