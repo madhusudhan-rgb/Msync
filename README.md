@@ -21,10 +21,11 @@ A music player application built with Dear ImGui, OpenGL, and GLFW. It provides 
 ### Build Instructions
 
 ```bash
-mkdir build && cd build
-cmake ..
-make
-./MP3IMGUI
+After cloning this repo,
+All you should need to do is have cmake,
+g++ compilers, OpenGL and GLFW in your system and run ./bash.sh or
+./bash.ps1 and it will compile using cmake,
+build the package and run the .exe
 ```
 
 ## Running
