@@ -240,16 +240,13 @@ void render_ui()
     ImGui::EndChild();
 
     ImGui::Spacing();
-    // ImGui::Checkbox("Show ImGui Demo", &show_demo);
-    // ImGui::End();
+    ImGui::End();
 
-    // if (show_demo) ImGui::ShowDemoWindow(&show_demo);
-
-    // // ---- auto-advance ----
-    // if (mp3::finished()) {
-    //     mp3::clear_finished();
-    //     next_track();
-    // }
+    // ---- auto-advance ----
+    if (mp3::finished()) {
+        mp3::clear_finished();
+        next_track();
+    }
 }
 
 int main(int argc, char** argv)
