@@ -19,6 +19,7 @@ namespace fs = std::filesystem;
 
 static char path_buf[2048] = "";
 static char folder_buf[2048] = "";
+static std::string status_msg;
 //static bool show_demo = false;
 
 static std::string run_zenity(const char* args) {
@@ -122,22 +123,29 @@ void render_ui()
         std::string p = run_zenity("--file-selection --title=\"Select audio file\"");
         if (!p.empty()) std::strncpy(path_buf, p.c_str(), sizeof(path_buf) - 1);
     }
-    //seems to bug out while adding files so commenting this out cuz the PLAY FILE one works
-    //pardon
-    // ImGui::SameLine();
-    // if (ImGui::Button("Add File")) {
-    //     if (path_buf[0]) {
-    //         playlist.push_back(path_buf);
-    //         if (current_index < 0) play_index(0);
-    //         path_buf[0] = '\0';
-    //     }
-    // }
     ImGui::SameLine();
-    if (ImGui::Button("Files")) {
+    if (ImGui::Button("Add File")) {
+        if (path_buf[0]) {
+            std::error_code ec;
+            if (fs::exists(path_buf, ec) && is_audio_file(path_buf)) {
+                playlist.push_back(path_buf);
+                if (current_index < 0) play_index(0);
+                status_msg = "Added file.";
+                path_buf[0] = '\0';
+            } else {
+                status_msg = "Not a valid audio file.";
+            }
+        } else {
+            status_msg = "Enter a file path first.";
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Play File...")) {
         std::string p = run_zenity("--file-selection --title=\"Select audio file\"");
         if (!p.empty()) {
             playlist.push_back(p);
             play_index((int)playlist.size() - 1);
+            status_msg = "Playing: " + fs::path(p).filename().string();
         }
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
@@ -147,22 +155,37 @@ void render_ui()
         std::string p = run_zenity("--file-selection --directory --title=\"Select music folder\"");
         if (!p.empty()) std::strncpy(folder_buf, p.c_str(), sizeof(folder_buf) - 1);
     }
-    //same issue here 
-    //seems to have a conflict and it seems reduntant to have two buttons that dp the same
-    // ImGui::SameLine();
-    // if (ImGui::Button("Add Folder")) {
-    //     if (folder_buf[0]) {
-    //         fs::path d(folder_buf);
-    //         if (fs::is_directory(d)) {
-    //             for (auto& e : fs::recursive_directory_iterator(d)) {
-    //                 if (e.is_regular_file() && is_audio_file(e.path()))
-    //                     playlist.push_back(e.path().string());
-    //             }
-    //             if (current_index < 0 && !playlist.empty()) play_index(0);
-    //         }
-    //         folder_buf[0] = '\0';
-    //     }
-    // }
+    ImGui::SameLine();
+    if (ImGui::Button("Add Folder")) {
+        if (folder_buf[0]) {
+            fs::path d(folder_buf);
+            std::error_code ec;
+            if (fs::is_directory(d, ec)) {
+                int added = 0;
+                try {
+                    for (auto& e : fs::recursive_directory_iterator(d, fs::directory_options::skip_permission_denied)) {
+                        if (e.is_regular_file(ec) && is_audio_file(e.path())) {
+                            playlist.push_back(e.path().string());
+                            added++;
+                        }
+                    }
+                } catch (const std::exception& ex) {
+                    status_msg = std::string("Scan error: ") + ex.what();
+                    added = -1;
+                }
+                if (added >= 0) {
+                    if (current_index < 0 && !playlist.empty()) play_index(0);
+                    status_msg = "Added " + std::to_string(added) + " track(s) from folder.";
+                }
+            } else {
+                status_msg = "Not a valid folder.";
+            }
+            folder_buf[0] = '\0';
+        } else {
+            status_msg = "Enter a folder path first.";
+        }
+    }
+    if (!status_msg.empty()) ImGui::TextColored(ImVec4(0.8f, 0.9f, 0.3f, 1.0f), "%s", status_msg.c_str());
     ImGui::TextDisabled("Tip: drag & drop files or folders onto the window.");
 
     ImGui::Spacing();
@@ -256,7 +279,8 @@ void render_ui()
         next_track();
     }
 }
-
+//where functions get called 
+//check above for the buttons and widgets
 int main(int argc, char** argv)
 {
     if (argc > 1) {
@@ -277,13 +301,13 @@ int main(int argc, char** argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);//right here
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);//
+        //its resizeable dont worry -- >
+    constexpr int window_width = 1400;
+    constexpr int window_height = 1000;
 
-    constexpr int window_width = 1280;
-    constexpr int window_height = 800;
-
-    GLFWwindow* window = glfwCreateWindow(window_width, window_height, "MP3 Player", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(window_width, window_height, "Msync", nullptr, nullptr);
     if (window == nullptr) {
         std::cerr << "Window creation failed\n";
         glfwTerminate();
