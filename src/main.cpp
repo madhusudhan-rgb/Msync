@@ -119,42 +119,25 @@ void render_ui()
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
     ImGui::InputText("File", path_buf, sizeof(path_buf));
     ImGui::SameLine();
-    if (ImGui::Button("Browse...##file")) {
-        std::string p = run_zenity("--file-selection --title=\"Select audio file\"");
-        if (!p.empty()) std::strncpy(path_buf, p.c_str(), sizeof(path_buf) - 1);
-    }
+    // if (ImGui::Button("Browse...##file")) {
+    //     std::string p = run_zenity("--file-selection --title=\"Select audio file\"");
+    //     if (!p.empty()) std::strncpy(path_buf, p.c_str(), sizeof(path_buf) - 1);
+    // }
     ImGui::SameLine();
-    if (ImGui::Button("Add File")) {
-        if (path_buf[0]) {
-            std::error_code ec;
-            if (fs::exists(path_buf, ec) && is_audio_file(path_buf)) {
-                playlist.push_back(path_buf);
-                if (current_index < 0) play_index(0);
-                status_msg = "Added file.";
-                path_buf[0] = '\0';
-            } else {
-                status_msg = "Not a valid audio file.";
-            }
-        } else {
-            status_msg = "Enter a file path first.";
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Play File...")) {
+    if (ImGui::Button("Files")) {
         std::string p = run_zenity("--file-selection --title=\"Select audio file\"");
         if (!p.empty()) {
             playlist.push_back(p);
             play_index((int)playlist.size() - 1);
-            status_msg = "Playing: " + fs::path(p).filename().string();
         }
     }
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
     ImGui::InputText("Folder", folder_buf, sizeof(folder_buf));
     ImGui::SameLine();
-    if (ImGui::Button("Browse...##folder")) {
-        std::string p = run_zenity("--file-selection --directory --title=\"Select music folder\"");
-        if (!p.empty()) std::strncpy(folder_buf, p.c_str(), sizeof(folder_buf) - 1);
-    }
+    // if (ImGui::Button("Browse...##folder")) {
+    //     std::string p = run_zenity("--file-selection --directory --title=\"Select music folder\"");
+    //     if (!p.empty()) std::strncpy(folder_buf, p.c_str(), sizeof(folder_buf) - 1);
+    // }
     ImGui::SameLine();
     if (ImGui::Button("Add Folder")) {
         if (folder_buf[0]) {
