@@ -115,48 +115,54 @@ void render_ui()
     ImGui::Separator();
 
     // ---- add files / folders ----
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
     ImGui::InputText("File", path_buf, sizeof(path_buf));
     ImGui::SameLine();
     if (ImGui::Button("Browse...##file")) {
         std::string p = run_zenity("--file-selection --title=\"Select audio file\"");
         if (!p.empty()) std::strncpy(path_buf, p.c_str(), sizeof(path_buf) - 1);
     }
+    //seems to bug out while adding files so commenting this out cuz the PLAY FILE one works
+    //pardon
+    // ImGui::SameLine();
+    // if (ImGui::Button("Add File")) {
+    //     if (path_buf[0]) {
+    //         playlist.push_back(path_buf);
+    //         if (current_index < 0) play_index(0);
+    //         path_buf[0] = '\0';
+    //     }
+    // }
     ImGui::SameLine();
-    if (ImGui::Button("Add File")) {
-        if (path_buf[0]) {
-            playlist.push_back(path_buf);
-            if (current_index < 0) play_index(0);
-            path_buf[0] = '\0';
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Play File...")) {
+    if (ImGui::Button("Files")) {
         std::string p = run_zenity("--file-selection --title=\"Select audio file\"");
         if (!p.empty()) {
             playlist.push_back(p);
             play_index((int)playlist.size() - 1);
         }
     }
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
     ImGui::InputText("Folder", folder_buf, sizeof(folder_buf));
     ImGui::SameLine();
     if (ImGui::Button("Browse...##folder")) {
         std::string p = run_zenity("--file-selection --directory --title=\"Select music folder\"");
         if (!p.empty()) std::strncpy(folder_buf, p.c_str(), sizeof(folder_buf) - 1);
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Add Folder")) {
-        if (folder_buf[0]) {
-            fs::path d(folder_buf);
-            if (fs::is_directory(d)) {
-                for (auto& e : fs::recursive_directory_iterator(d)) {
-                    if (e.is_regular_file() && is_audio_file(e.path()))
-                        playlist.push_back(e.path().string());
-                }
-                if (current_index < 0 && !playlist.empty()) play_index(0);
-            }
-            folder_buf[0] = '\0';
-        }
-    }
+    //same issue here 
+    //seems to have a conflict and it seems reduntant to have two buttons that dp the same
+    // ImGui::SameLine();
+    // if (ImGui::Button("Add Folder")) {
+    //     if (folder_buf[0]) {
+    //         fs::path d(folder_buf);
+    //         if (fs::is_directory(d)) {
+    //             for (auto& e : fs::recursive_directory_iterator(d)) {
+    //                 if (e.is_regular_file() && is_audio_file(e.path()))
+    //                     playlist.push_back(e.path().string());
+    //             }
+    //             if (current_index < 0 && !playlist.empty()) play_index(0);
+    //         }
+    //         folder_buf[0] = '\0';
+    //     }
+    // }
     ImGui::TextDisabled("Tip: drag & drop files or folders onto the window.");
 
     ImGui::Spacing();
@@ -180,17 +186,17 @@ void render_ui()
         ImGui::Text("Time: %.1f / %.1f s", pos, dur);
 
         ImGui::Spacing();
-
+        if (ImGui::Button("<")) prev_track();
+        ImGui::SameLine();
         if (mp3::is_playing()) {
 
             if (ImGui::Button("Pause")) mp3::pause();
         } else {
             if (ImGui::Button("play")) mp3::play();
         }
-         if (ImGui::Button("<")) prev_track();
         ImGui::SameLine();
-        if (ImGui::Button("stop")) mp3::stop();
-        ImGui::SameLine();
+        // if (ImGui::Button("stop")) mp3::stop();
+        // ImGui::SameLine();
         if (ImGui::Button(">")) next_track();
 
         ImGui::Spacing();
