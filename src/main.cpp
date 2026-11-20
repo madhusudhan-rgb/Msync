@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 
 static char path_buf[2048] = "";
 static char folder_buf[2048] = "";
-static bool show_demo = false;
+//static bool show_demo = false;
 
 static std::string run_zenity(const char* args) {
     std::string cmd = std::string("zenity ") + args + " 2>/dev/null";
@@ -163,7 +163,9 @@ void render_ui()
     ImGui::Separator();
 
     // ---- now playing ----
-    if (mp3::is_loaded()) {
+    if (mp3::is_loading()) {
+        ImGui::Text("Loading: %s", mp3::title().empty() ? "..." : mp3::title().c_str());
+    } else if (mp3::is_loaded()) {
         ImGui::Text("Now Playing: %s", mp3::title().c_str());
 
         double pos = mp3::position();
@@ -180,14 +182,14 @@ void render_ui()
         ImGui::Spacing();
 
         if (mp3::is_playing()) {
-            if (ImGui::Button("||")) mp3::pause();
+
+            if (ImGui::Button("Pause")) mp3::pause();
         } else {
             if (ImGui::Button("play")) mp3::play();
         }
+         if (ImGui::Button("<")) prev_track();
         ImGui::SameLine();
         if (ImGui::Button("stop")) mp3::stop();
-        ImGui::SameLine();
-        if (ImGui::Button("<")) prev_track();
         ImGui::SameLine();
         if (ImGui::Button(">")) next_track();
 

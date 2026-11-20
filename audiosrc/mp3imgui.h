@@ -13,6 +13,7 @@ namespace mp3 {
 
     bool is_playing();
     bool is_loaded();
+    bool is_loading();
     bool finished();     // true when current track reached end
     void clear_finished();
 
