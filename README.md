@@ -33,8 +33,8 @@ make
 ./build.sh for linux distros & ./build.ps1 for windows
 and if you encounter glib issues add GDK_BACKEND=x11
 infront of the ps1 script in your terminal.
-Not that you should have this glib issue as there fallbacks
- for it inside the cmake file when it get compiled using the ps script
+Not that you should have this glib issue as there are fallbacks
+for it inside the cmake file when it get compiled using the ps script
 ```
 
 ## Configuration
