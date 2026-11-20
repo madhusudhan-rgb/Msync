@@ -1,0 +1,13 @@
+# Build artifacts
+build/
+
+# External dependencies - imgui is managed separately
+external/imgui/
+
+# IDE files
+.vscode/*.code-workspace
+.vscode/settings.json
+
+# Temporary files
+*.tmp
+*.log
