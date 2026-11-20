@@ -33,14 +33,14 @@ static std::string run_zenity(const char* args) {
     return out;
 }
 
-// ---- playlist state ---------------------------------------------------------
+// ---- playlist state 
 static std::vector<std::string> playlist;
 static int current_index = -1;
 static bool repeat_all = true;
 static bool repeat_one = false;
 static bool shuffle = false;
 static int selected = -1;
-
+//supported file types
 static const std::vector<std::string> audio_exts = {
     ".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac", ".wma"
 };
@@ -109,9 +109,9 @@ void render_ui()
         ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoTitleBar;
 
-    ImGui::Begin("MP3 Player", nullptr, flags);
+    ImGui::Begin("Msync", nullptr, flags);
 
-    ImGui::Text("MP3 Player");
+    //ImGui::Text("");
     ImGui::Separator();
 
     // ---- add files / folders ----
@@ -180,16 +180,16 @@ void render_ui()
         ImGui::Spacing();
 
         if (mp3::is_playing()) {
-            if (ImGui::Button("Pause")) mp3::pause();
+            if (ImGui::Button("||")) mp3::pause();
         } else {
-            if (ImGui::Button("Play")) mp3::play();
+            if (ImGui::Button("play")) mp3::play();
         }
         ImGui::SameLine();
-        if (ImGui::Button("Stop")) mp3::stop();
+        if (ImGui::Button("stop")) mp3::stop();
         ImGui::SameLine();
-        if (ImGui::Button("Prev")) prev_track();
+        if (ImGui::Button("<")) prev_track();
         ImGui::SameLine();
-        if (ImGui::Button("Next")) next_track();
+        if (ImGui::Button(">")) next_track();
 
         ImGui::Spacing();
         float vol = mp3::volume();
@@ -203,7 +203,7 @@ void render_ui()
         ImGui::SameLine();
         ImGui::Checkbox("Shuffle", &shuffle);
     } else {
-        ImGui::Text("No track loaded.");
+        ImGui::Text("N/A");
     }
 
     ImGui::Spacing();
@@ -240,16 +240,16 @@ void render_ui()
     ImGui::EndChild();
 
     ImGui::Spacing();
-    ImGui::Checkbox("Show ImGui Demo", &show_demo);
-    ImGui::End();
+    // ImGui::Checkbox("Show ImGui Demo", &show_demo);
+    // ImGui::End();
 
-    if (show_demo) ImGui::ShowDemoWindow(&show_demo);
+    // if (show_demo) ImGui::ShowDemoWindow(&show_demo);
 
-    // ---- auto-advance ----
-    if (mp3::finished()) {
-        mp3::clear_finished();
-        next_track();
-    }
+    // // ---- auto-advance ----
+    // if (mp3::finished()) {
+    //     mp3::clear_finished();
+    //     next_track();
+    // }
 }
 
 int main(int argc, char** argv)
