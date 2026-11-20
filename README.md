@@ -1,6 +1,6 @@
-# MP3IMGUI
+# Msync
 
-MP3IMGUI is a music player application built with Dear ImGui, OpenGL, and GLFW. It provides a minimalistic audio playback interface with a custom UI built using the ImGui framework.
+A music player application built with Dear ImGui, OpenGL, and GLFW. It provides a minimalistic audio playback interface with a custom UI built using the ImGui framework.
 
 ## Features
 
