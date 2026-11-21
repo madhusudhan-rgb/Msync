@@ -37,7 +37,7 @@ static std::string run_zenity(const char* args) {
 // ---- playlist state 
 static std::vector<std::string> playlist;
 static int current_index = -1;
-static bool repeat_all = true;
+static bool repeat_all = false;//stays unchecked at init
 static bool repeat_one = false;
 static bool shuffle = false;
 static int selected = -1;
@@ -114,7 +114,8 @@ void render_ui()
 
     //ImGui::Text("");
     ImGui::Separator();
-
+    ImGui::TextDisabled("V1.0.0");
+    ImGui::Separator();
     // ---- add files / folders ----
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
     ImGui::InputText("File", path_buf, sizeof(path_buf));
@@ -134,7 +135,7 @@ void render_ui()
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
     ImGui::InputText("Folder", folder_buf, sizeof(folder_buf));
     ImGui::SameLine();
-    if (ImGui::Button("Browse...##folder")) {
+    if (ImGui::Button("Browse")) {
         std::string p = run_zenity("--file-selection --directory --title=\"Select music folder\"");
         if (!p.empty()) std::strncpy(folder_buf, p.c_str(), sizeof(folder_buf) - 1);
     }
@@ -153,7 +154,7 @@ void render_ui()
                         }
                     }
                 } catch (const std::exception& ex) {
-                    status_msg = std::string("Scan error: ") + ex.what();
+                    status_msg = std::string("Scan failed: ") + ex.what();
                     added = -1;
                 }
                 if (added >= 0) {
@@ -161,7 +162,7 @@ void render_ui()
                     status_msg = "Added " + std::to_string(added) + " track(s) from folder.";
                 }
             } else {
-                status_msg = "Not a valid folder.";
+                status_msg = "Not valid";
             }
             folder_buf[0] = '\0';
         } else {
@@ -169,7 +170,7 @@ void render_ui()
         }
     }
     if (!status_msg.empty()) ImGui::TextColored(ImVec4(0.8f, 0.9f, 0.3f, 1.0f), "%s", status_msg.c_str());
-    ImGui::TextDisabled("Tip: drag & drop files or folders onto the window or select files");
+    //ImGui::TextDisabled("Tip: drag & drop files or folders onto the window or select files");
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -189,11 +190,11 @@ void render_ui()
         if (ImGui::SliderFloat("", &fpos, 0.0f, fdur, "%.1f s")) {
             mp3::seek(fpos);
         }
-        ImGui::Text("Time: %.1f / %.1f s", pos, dur);
-
+        ImGui::Text("%.1f / %.1f s", pos, dur);
+        ImGui::SameLine();
         ImGui::Spacing();
         if (ImGui::Button("<")) prev_track();
-        ImGui::SameLine();
+        ImGui::SameLine(0.0f, 20.0f);
         if (mp3::is_playing()) {
 
             if (ImGui::Button("Pause")) mp3::pause();
@@ -207,14 +208,14 @@ void render_ui()
 
         ImGui::Spacing();
         float vol = mp3::volume();
-        if (ImGui::SliderFloat("Volume", &vol, 0.0f, 1.0f)) {
+        if (ImGui::SliderFloat("Vol", &vol, 0.0f, 1.0f)) {
             mp3::set_volume(vol);
         }
 
         ImGui::Checkbox("Repeat All", &repeat_all);
-        ImGui::SameLine();
-        ImGui::Checkbox("Repeat One", &repeat_one);
-        ImGui::SameLine();
+        ImGui::Separator();
+        ImGui::Checkbox("Repeat Once", &repeat_one);
+        ImGui::Separator();
         ImGui::Checkbox("Shuffle", &shuffle);
     } else {
         ImGui::Text("N/A");
